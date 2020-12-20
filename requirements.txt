@@ -1,0 +1,6 @@
+paramiko
+psycopg2-binary
+requests
+bs4
+progress
+notify2
