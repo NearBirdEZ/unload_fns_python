@@ -37,7 +37,7 @@ class UnloadFns:
         self.rnm_string = inner_vars[4]
         self.connect = Connections('properties')
         self.__job_folder()
-        self.global_count_bar = 0
+        self.count_fn = 0
         self.bar = None
         self.lock = Lock()
 
@@ -130,7 +130,6 @@ class UnloadFns:
         return fn_list
 
     def get_dict_inn_rnm_fn(self):
-        count = 0
         rnm_inn_list = self.collect_rnm_inn()
         bar = self.init_bar('Получение пар РНМ:ФН', len(rnm_inn_list) * 2)
         three_inn_rnm_fn_dict = {}
@@ -142,9 +141,9 @@ class UnloadFns:
                     three_inn_rnm_fn_dict[inn].append((rnm, fn))
                 else:
                     three_inn_rnm_fn_dict[inn] = [(rnm, fn)]
-                count += 1
+                self.count_fn += 1
             bar.next()
-        return three_inn_rnm_fn_dict, count
+        return three_inn_rnm_fn_dict
 
     def min_max_fd(self, rnm, fn, start_date, end_date):
         """Получаем минимальный и максимальные ФД в периоде относительно РНМ и ФН"""
@@ -293,22 +292,21 @@ class UnloadFns:
               f'\nНа вход поступил запрос по использованию {self.threads} потоков')
         old_threads = self.threads
         count_month = len(self.date_list)
-        count_fn = self.global_count_bar
         flag = None
 
-        if self.threads >= max(count_month, count_fn):
-            if count_month >= count_fn:
+        if self.threads >= max(count_month, self.count_fn):
+            if count_month >= self.count_fn:
                 self.threads = count_month
                 flag = True
             else:
-                self.threads = count_fn
+                self.threads = self.count_fn
                 flag = False
-        elif self.threads < max(count_month, count_fn):
-            if count_month >= count_fn:
+        elif self.threads < max(count_month, self.count_fn):
+            if count_month >= self.count_fn:
                 self.threads = ceil(count_month / ceil(count_month / self.threads))
                 flag = True
             else:
-                self.threads = ceil(count_fn / ceil(count_fn / self.threads))
+                self.threads = ceil(self.count_fn / ceil(self.count_fn / self.threads))
                 flag = False
         if old_threads != self.threads:
             print(f'Количество потоков было изменено на {self.threads} для корректной загрузки')
@@ -340,12 +338,12 @@ def main():
     if get_version():
         uf = UnloadFns('request.txt')
         uf.print_date()
-        dict_inn_rnm_fn, uf.global_count_bar = uf.get_dict_inn_rnm_fn()
+        dict_inn_rnm_fn = uf.get_dict_inn_rnm_fn()
         unload_flag = uf.analysis()
         if unload_flag:
-            max_bar = uf.global_count_bar * 2 * uf.threads
+            max_bar = uf.count_fn * 2 * uf.threads
         else:
-            max_bar = uf.global_count_bar * 2
+            max_bar = uf.count_fn * 2
         uf.bar = uf.init_bar('Общий прогресс выполнения', max_bar)
         for inn, rnm_fn_list in dict_inn_rnm_fn.items():
             if len(rnm_fn_list) != 0:
