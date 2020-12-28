@@ -274,18 +274,64 @@ class UnloadFns:
                     os.rmdir(f'{path}{num}')
 
     def final_zip(self):
-        with zipfile.ZipFile(f'{self.request}.zip', mode='w', compression=zipfile.ZIP_DEFLATED) as zipFile:
-            # Обход всего дерева директории и сжатие файлов в каждой папке
-            files = [file for file in os.listdir('.') if not file.endswith('.zip')]
-            for folder in files:
-                for root, dirs, files in os.walk(folder):  # Список всех файлов и папок в директории folder
-                    for file in files:
-                        file_name = os.path.join(root, file)
-                        zipFile.write(file_name)  # Создание относительных путей и запись файлов в архив
-                        os.remove(file_name)
-                    if not os.listdir(root):
-                        os.rmdir(root)
-                os.rmdir(folder)
+        file_path = []
+        sum_folder = 0
+        sum_files = 0
+        for root, dirs, files in os.walk('.'):
+            file_path.append([os.path.join(root, file) for file in files])
+
+        file_list = []
+        for folder in file_path:
+            weight_folder = 0
+            if len(folder) == 0:
+                continue
+            for file in folder:
+                weight_folder += os.path.getsize(file)
+                sum_files += 1
+            sum_folder += weight_folder
+            file_list.append((weight_folder, folder))
+
+        bar = self.init_bar('Архивация', sum_files)
+        limit_weight = 1403238553
+
+        count_files = ceil(sum_folder / limit_weight)
+
+        weight = 0
+        name_file_list = []
+        count = 0
+
+        def zip_files(self, bar, files_list, num):
+            with zipfile.ZipFile(f'Выгрузка по заявке {self.request}{num}.zip', mode='w', compression=zipfile.ZIP_DEFLATED) as zipFile:
+                for file in files_list:
+                    zipFile.write(file)
+                    file_dir = os.path.split(file)[0]
+                    os.remove(file)
+                    bar.next()
+                    try:
+                        os.removedirs(file_dir)
+                    except OSError:
+                        pass
+
+        while True:
+            if len(file_list) == 0:
+                break
+            for i in range(len(file_list)):
+                if weight + file_list[i][0] < limit_weight:
+                    weight += file_list[i][0]
+                    name_file_list += file_list[i][1]
+                    file_list.remove(file_list[i])
+                if len(file_list) == 0 or weight + file_list[i][0] >= limit_weight:
+                    count += 1
+
+                    if count_files == 1:
+                        num_zip = ''
+                    else:
+                        num_zip = f' № {count}'
+
+                    zip_files(self, bar, name_file_list, num_zip)
+                    name_file_list.clear()
+                    weight = 0
+                break
 
     def analysis(self):
         print(f'\n\nПроизводится настройка количества потоков относительно входных данных.'
@@ -350,6 +396,7 @@ def main():
                 uf.start_threading(inn, rnm_fn_list, unload_flag)
         print()
         uf.final_zip()
+        print()
         notify(uf.request)
     else:
         print('Вышла новая версия скрипта. Обновись: https://github.com/NearBirdEZ/unload_fns_python')
