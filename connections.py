@@ -78,10 +78,11 @@ class Connections:
         params = (
             ('pretty', ''),
         )
+        url = f'http://{self.host_elastic}:{self.port_elastic}/{index}/_search'
 
-        response = requests.post(f'http://{self.host_elastic}:{self.port_elastic}/{index}/_search',
-                                 headers=headers, params=params, data=data,
+        response = requests.post(url, headers=headers, params=params, data=data,
                                  auth=(self.login_elastic, self.password_elastic))
+
         return response.json()
 
     def to_sql(self, request):

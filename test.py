@@ -131,9 +131,6 @@ class UnloadFns:
 
     def get_dict_inn_rnm_fn(self):
         rnm_inn_list = self.collect_rnm_inn()
-        if not rnm_inn_list:
-            print('Пар РНМ:ИНН не найдено.')
-            exit()
         bar = self.init_bar('Получение пар РНМ:ФН', len(rnm_inn_list) * 2)
         three_inn_rnm_fn_dict = {}
         for rnm, inn in rnm_inn_list:
@@ -167,33 +164,26 @@ class UnloadFns:
         Выгружаются по всем необходимым индексам
         Флаг необходим для запуска функции архивирования"""
         flag = False
-        index_list = ['receipt.*', 'open_shift', 'close_shift', 'fiscal_report', 'fiscal_report_correction',
+        index_list = ['fiscal_report', 'fiscal_report_correction',
                       'bso', 'bso_correction', 'current_state_report', 'close_archive']
-
-        index_list = ['receipt.*',
-                      'open_shift',
-                      'close_shift',
-                      'fiscal_report',
-                      'fiscal_report_correction',
-                      'bso',
-                      'bso_correction',
-                      'current_state_report',
-                      'close_archive']
-
         delta = max_fd - min_fd
         iteration = ceil(delta / 10000)
         for type_fd in index_list:
             rec_list = []
             for _ in range(iteration):
-                data = '{"from" : 0, "size" : 10000, "_source" : {"includes" : ["requestmessage.*"]}, ' \
+                data = '{"from" : 0, "size" : 10000,' \
                        '"query" : {"bool" : {"filter" : {"bool" : { "must" : ' \
                        '[{"term" : {"requestmessage.fiscalDriveNumber.raw" : "%s"}}, ' \
                        '{"term" : {"requestmessage.kktRegId.raw" : "%s"}},' \
                        '{"range" : {"requestmessage.fiscalDocumentNumber" : {"gte" : %d, "lte" : %d }}}]}}}}, ' \
                        '"sort" : [{ "requestmessage.fiscalDocumentNumber" : { "order" : "asc"}}]}' % \
                        (fn, rnm, min_fd, max_fd)
-                receipts = self.connect.to_elastic(data, type_fd)['hits']['hits']
-                rec_list += receipts
+
+                receipts = self.connect.to_elastic(data, type_fd)
+                print(data)
+                print(type_fd)
+                print(receipts)
+                rec_list += receipts['hits']['hits']
                 min_fd += 10000
             if rec_list:
                 flag = True
@@ -243,7 +233,7 @@ class UnloadFns:
 
     def thread_job_month(self, num_thread, inn, rnm_fn_list):
         for rnm, fn in rnm_fn_list:
-            self.next_bar()
+            #self.next_bar()
             for i in range(num_thread, len(self.date_list), self.threads):
                 start_date = int(self.date_list[i][0].timestamp())
                 end_date = int(self.date_list[i][1].timestamp())
@@ -252,22 +242,23 @@ class UnloadFns:
                     min_fd, max_fd = int(min_fd), int(max_fd)
                     if self.download_json(inn, rnm, fn, min_fd, max_fd, i):
                         self.zipped(inn, rnm, fn, self.date_list[i], i)
-            self.next_bar()
+            #self.next_bar()
 
     def thread_job_rnm(self, num_thread, inn, rnm_fn_list):
         for i in range(num_thread, len(rnm_fn_list), self.threads):
             rnm = rnm_fn_list[i][0]
             fn = rnm_fn_list[i][1]
-            self.next_bar()
+            #self.next_bar()
             for dates in self.date_list:
                 start_date = int(dates[0].timestamp())
                 end_date = int(dates[1].timestamp())
                 min_fd, max_fd = self.min_max_fd(rnm, fn, start_date, end_date)
+                print(min_fd, max_fd)
                 if min_fd and max_fd:
                     min_fd, max_fd = int(min_fd), int(max_fd)
                     if self.download_json(inn, rnm, fn, min_fd, max_fd, i):
                         self.zipped(inn, rnm, fn, dates, i)
-            self.next_bar()
+            #self.next_bar()
 
     def zipped(self, inn, rnm, fn, period, num):
         """Зипую папку с именем rnm.fn.period"""
@@ -419,3 +410,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
