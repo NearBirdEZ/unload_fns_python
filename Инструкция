@@ -1,4 +1,0 @@
-1. Установить pip3 - sudo apt install python3-pip
-2. Выполнить команду pip3 install -r requirements.txt
-3. Требуется заполнить файл properties, request
-4. Выше папки со скриптом создается папка unload_for_fns с номером заявки.
