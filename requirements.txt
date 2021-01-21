@@ -3,5 +3,6 @@ psycopg2-binary
 requests
 bs4
 progress
+cffi
 notify2
 tkcalendar

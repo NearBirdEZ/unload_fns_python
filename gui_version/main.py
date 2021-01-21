@@ -132,7 +132,8 @@ class App:
             uf.bar.place(relx=0.01, rely=0.95)
             uf.count_bar = 0
             uf.final_zip()
-            notify(uf.request)
+            messagebox.showinfo("Готово")
+            #notify(uf.request)
         else:
             tk.Label(self.gui_window,
                      text='Вышла новая версия скрипта. Обновись:\nhttps://github.com/NearBirdEZ/unload_fns_python',

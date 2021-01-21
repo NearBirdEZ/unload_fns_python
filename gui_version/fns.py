@@ -10,7 +10,7 @@ import zipfile
 from threading import Thread, Lock
 import requests
 from bs4 import BeautifulSoup
-import notify2
+#import notify2
 
 
 def get_version():
@@ -320,13 +320,14 @@ class UnloadFns:
                 flag = False
         return flag
 
-
+"""
 def notify(request):
     # Оповещалка об окончании выгрузки
     notify2.init(f'Выгрузка по заявке {request}')
     n = notify2.Notification(f'Выгрузка по заявке № {request} завершилась.')
     n.set_urgency(notify2.URGENCY_NORMAL)
     n.show()
+"""
 
 
 def main():
