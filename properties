@@ -1,4 +1,4 @@
-version=1.5
+version=1.6
 database_db=
 user_db=
 password_db=
@@ -9,9 +9,3 @@ user_elastic=
 password_elastic=
 host_elastic=
 port_elastic=
-
-
-user_server=
-password_server=
-host_server=
-port_server=
